@@ -6,6 +6,9 @@ FROM ubuntu:18.04 as system
 ARG localbuild
 RUN if [ "x$localbuild" != "x" ]; then sed -i 's#http://archive.ubuntu.com/#http://tw.archive.ubuntu.com/#' /etc/apt/sources.list; fi
 
+# Add custom china source
+ADD sources.list /etc/apt/
+
 # && add-apt-repository ppa:fcwu-tw/apps  x11vnc
 # built-in packages
 RUN apt-get update \
@@ -32,8 +35,8 @@ ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /bin/
 RUN chmod +x /bin/tini
 
 # ffmpeg
-RUN mkdir -p /usr/local/ffmpeg \
-    && curl -sSL https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-64bit-static.tar.xz | tar xJvf - -C /usr/local/ffmpeg/ --strip 1
+#RUN mkdir -p /usr/local/ffmpeg \
+#    && curl -sSL https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-64bit-static.tar.xz | tar xJvf - -C /usr/local/ffmpeg/ --strip 1
 
 # python library
 COPY image/usr/local/lib/web/backend/requirements.txt /tmp/
@@ -56,6 +59,9 @@ FROM ubuntu:16.04 as builder
 
 ARG localbuild
 RUN if [ "x$localbuild" != "x" ]; then sed -i 's#http://archive.ubuntu.com/#http://tw.archive.ubuntu.com/#' /etc/apt/sources.list; fi
+
+# Add custom china source
+ADD sources.list /etc/apt/
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl ca-certificates
@@ -83,8 +89,14 @@ RUN cd /src/web \
 FROM system
 LABEL maintainer="fcwu.tw@gmail.com"
 
+# Add custom china source
+ADD sources.list /etc/apt/
+
 COPY --from=builder /src/web/dist/ /usr/local/lib/web/frontend/
 COPY image /
+
+RUN mkdir -p /data/
+VOLUME /data
 
 EXPOSE 80
 WORKDIR /root
